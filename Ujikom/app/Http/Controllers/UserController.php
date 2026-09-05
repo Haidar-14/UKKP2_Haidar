@@ -33,11 +33,11 @@ class UserController extends Controller
         $userLogin = Auth::user();
 
         $request->validate([
-            'nama' => 'required|string|max:100',
-            'email' => 'required|email|unique:users,email',
-            'no_telp' => 'nullable|numeric|digits_between:10,15',
+            'nama'     => 'required|string|max:100',
+            'email'    => 'required|email|unique:users,email',
+            'no_telp'  => 'nullable|numeric|digits_between:10,15',
             'password' => 'required|min:6',
-            'role' => 'required|in:admin,petugas,user',
+            'role'     => 'required|in:admin,petugas,user',
         ]);
 
         // Petugas hanya boleh membuat user biasa
@@ -46,11 +46,11 @@ class UserController extends Controller
         }
 
         User::create([
-            'nama' => $request->nama,
-            'email' => $request->email,
-            'no_telp' => $request->no_telp,
+            'nama'     => $request->nama,
+            'email'    => $request->email,
+            'no_telp'  => $request->no_telp,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
+            'role'     => $request->role,
         ]);
 
         return redirect()->route('admin.user.index')->with('success', 'User berhasil ditambahkan.');
@@ -63,14 +63,13 @@ class UserController extends Controller
         $target = User::findOrFail($id);
 
         $request->validate([
-            'nama' => 'required|string|max:100',
-            'email' => 'required|email|unique:users,email,' . $id,
+            'nama'    => 'required|string|max:100',
+            'email'   => 'required|email|unique:users,email,' . $id,
             'no_telp' => 'nullable|numeric|digits_between:10,15',
-            'role' => 'required|in:admin,petugas,user',
-            'password' => 'nullable|min:6', // password opsional saat edit
+            'role'    => 'required|in:admin,petugas,user',
         ]);
 
-        // Petugas hanya boleh edit user biasa
+        // Petugas tidak boleh edit admin/petugas lain
         if ($userLogin->role === 'petugas' && $target->role !== 'user') {
             abort(403, 'Petugas hanya bisa mengubah user biasa.');
         }
@@ -80,23 +79,14 @@ class UserController extends Controller
             abort(403, 'Petugas hanya bisa mengubah role menjadi user.');
         }
 
-        // Data yang akan diupdate
-        $data = [
-            'nama' => $request->nama,
-            'email' => $request->email,
+        $target->update([
+            'nama'    => $request->nama,
+            'email'   => $request->email,
             'no_telp' => $request->no_telp,
-            'role' => $request->role,
-        ];
+            'role'    => $request->role,
+        ]);
 
-        // Jika password diisi, update password (di-hash)
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
-        }
-
-        $target->update($data);
-
-        return redirect()->route('admin.user.index')
-            ->with('success', 'User berhasil diperbarui.');
+        return redirect()->route('admin.user.index')->with('success', 'User berhasil diperbarui.');
     }
 
     // Menghapus user
